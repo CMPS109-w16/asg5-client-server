@@ -21,6 +21,9 @@ unordered_map<string,cix_command> command_map {
    {"exit", CIX_EXIT},
    {"help", CIX_HELP},
    {"ls"  , CIX_LS  },
+   {"get"  , CIX_GET  },
+   {"put"  , CIX_PUT  },
+   {"rm"  , CIX_RM  },
 };
 
 void cix_help() {
@@ -54,6 +57,19 @@ void cix_ls (client_socket& server) {
    }
 }
 
+void cix_get (client_socket& server) {
+   cout << "Get File" << endl;
+}
+
+void cix_put (client_socket& server) {
+   cout << "Put File" << endl;
+}
+
+void cix_rm (client_socket& server) {
+   cout << "Remove File" << endl;
+}
+
+
 void usage() {
    cerr << "Usage: " << log.execname() << " [host] [port]" << endl;
    throw cix_exit();
@@ -88,6 +104,15 @@ int main (int argc, char** argv) {
                break;
             case CIX_LS:
                cix_ls (server);
+               break;
+            case CIX_GET:
+               cix_get (server);
+               break;
+            case CIX_PUT:
+               cix_put (server);
+               break;
+            case CIX_RM:
+               cix_rm (server);
                break;
             default:
                log << line << ": invalid command" << endl;
