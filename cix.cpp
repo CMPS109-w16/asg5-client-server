@@ -21,8 +21,8 @@ unordered_map<string,cix_command> command_map {
    {"exit", CIX_EXIT},
    {"help", CIX_HELP},
    {"ls"  , CIX_LS  },
-   {"get"  , CIX_GET  },
-   {"put"  , CIX_PUT  },
+   {"get" , CIX_GET },
+   {"put" , CIX_PUT },
    {"rm"  , CIX_RM  },
 };
 
