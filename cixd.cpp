@@ -46,7 +46,18 @@ void reply_ls (accepted_socket& client_sock, cix_header& header) {
    log << "sent " << ls_output.size() << " bytes" << endl;
 }
 
-
+void reply_get (accepted_socket& client_sock, cix_header& header) {
+
+}
+
+void reply_put (accepted_socket& client_sock, cix_header& header) {
+
+}
+
+void reply_rm (accepted_socket& client_sock, cix_header& header) {
+
+}
+
 void run_server (accepted_socket& client_sock) {
    log.execname (log.execname() + "-server");
    log << "connected to " << to_string (client_sock) << endl;
@@ -60,13 +71,13 @@ void run_server (accepted_socket& client_sock) {
                reply_ls (client_sock, header);
                break;
             case CIX_GET:
-               reply_ls (client_sock, header);
+               reply_get (client_sock, header);
                break;
             case CIX_PUT:
-               reply_ls (client_sock, header);
+               reply_put (client_sock, header);
                break;
             case CIX_RM:
-               reply_ls (client_sock, header);
+               reply_rm (client_sock, header);
                break;
             default:
                log << "invalid header from client" << endl;
