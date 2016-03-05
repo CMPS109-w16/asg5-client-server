@@ -46,6 +46,7 @@ void reply_ls (accepted_socket& client_sock, cix_header& header) {
    log << "sent " << ls_output.size() << " bytes" << endl;
 }
 
+
 void run_server (accepted_socket& client_sock) {
    log.execname (log.execname() + "-server");
    log << "connected to " << to_string (client_sock) << endl;
@@ -56,6 +57,15 @@ void run_server (accepted_socket& client_sock) {
          log << "received header " << header << endl;
          switch (header.command) {
             case CIX_LS: 
+               reply_ls (client_sock, header);
+               break;
+            case CIX_GET:
+               reply_ls (client_sock, header);
+               break;
+            case CIX_PUT:
+               reply_ls (client_sock, header);
+               break;
+            case CIX_RM:
                reply_ls (client_sock, header);
                break;
             default:
@@ -91,6 +101,7 @@ void fork_cixserver (server_socket& server, accepted_socket& accept) {
    }
 }
 
+
 void reap_zombies() {
    for (;;) {
       int status;
@@ -118,6 +129,7 @@ void signal_action (int signal, void (*handler) (int)) {
                    << strerror (errno) << endl;
 }
 
+
 int main (int argc, char** argv) {
    log.execname (basename (argv[0]));
    log << "starting" << endl;
