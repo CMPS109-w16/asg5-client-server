@@ -47,7 +47,33 @@ void reply_ls (accepted_socket& client_sock, cix_header& header) {
 }
 
 void reply_get (accepted_socket& client_sock, cix_header& header) {
-
+   const char* get_cmd = "cat testfile 2>&1";
+   FILE* get_pipe = popen (get_cmd, "r");
+   if (get_pipe == NULL) {
+      log << "cat: popen failed: " << strerror (errno) << endl;
+      header.command = CIX_NAK;
+      header.nbytes = errno;
+      send_packet (client_sock, &header, sizeof header);
+   }
+   string get_output;
+   char buffer[0x1000];
+   for (;;) {
+      char* rc = fgets (buffer, sizeof buffer, get_pipe);
+      if (rc == nullptr) break;
+      get_output.append (buffer);
+   }
+   int status = pclose (get_pipe);
+   if (status < 0) log << get_cmd << ": " << strerror (errno) << endl;
+              else log << get_cmd << ": exit " << (status >> 8)
+                       << " signal " << (status & 0x7F)
+                       << " core " << (status >> 7 & 1) << endl;
+   header.command = CIX_GET;
+   header.nbytes = get_output.size();
+   memset (header.filename, 0, FILENAME_SIZE);
+   log << "sending header " << header << endl;
+   send_packet (client_sock, &header, sizeof header);
+   send_packet (client_sock, get_output.c_str(), get_output.size());
+   log << "sent " << get_output.size() << " bytes" << endl;
 }
 
 void reply_put (accepted_socket& client_sock, cix_header& header) {

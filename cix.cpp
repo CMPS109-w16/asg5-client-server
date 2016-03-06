@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <fstream>
 using namespace std;
 
 #include <libgen.h>
@@ -58,7 +59,26 @@ void cix_ls (client_socket& server) {
 }
 
 void cix_get (client_socket& server) {
-   cout << "Get File" << endl;
+   cix_header header;
+   header.command = CIX_GET;
+   log << "sending header " << header << endl;
+   send_packet (server, &header, sizeof header);
+   recv_packet (server, &header, sizeof header);
+   log << "received header " << header << endl;
+   if (header.command != CIX_GET) {
+      log << "sent CIX_GET, server did not return CIX_GET" << endl;
+      log << "server returned " << header << endl;
+   }else {
+      char buffer[header.nbytes + 1];
+      recv_packet (server, buffer, header.nbytes);
+      log << "received " << header.nbytes << " bytes" << endl;
+      buffer[header.nbytes] = '\0';
+      // Creates a new file to match the server one.
+      ofstream outfile ("test.txt");   // Rename to file name soon.
+      // The server file's contents are copied into the new file.
+      outfile << buffer << endl;
+      outfile.close();
+   }
 }
 
 void cix_put (client_socket& server) {
