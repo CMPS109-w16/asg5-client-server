@@ -49,7 +49,7 @@ void reply_ls (accepted_socket& client_sock, cix_header& header) {
 void reply_get(accepted_socket& client_sock, cix_header& header) {
    FILE* get_pipe = fopen(header.filename, "r");   // Opens the file.
    char buffer[0x1000];
-   string get_output { };
+   string get_output {};
 
    // While it isn't EOF, read from the get_pipe file.
    while (!feof(get_pipe)) {
@@ -77,8 +77,19 @@ void reply_put (accepted_socket& client_sock, cix_header& header) {
 
 }
 
-void reply_rm (accepted_socket& client_sock, cix_header& header) {
-
+void reply_rm(accepted_socket& client_sock, cix_header& header) {
+   int status = unlink(header.filename);
+   if (status < 0) log << "rm " << header.filename << ": " << strerror (errno) << endl;
+              else log << "rm " << header.filename << ": exit " << (status >> 8)
+                       << " signal " << (status & 0x7F)
+                       << " core " << (status >> 7 & 1) << endl;
+   header.command = CIX_LSOUT;
+   header.nbytes = ls_output.size();
+//   memset (header.filename, 0, FILENAME_SIZE);
+//   log << "sending header " << header << endl;
+//   send_packet (client_sock, &header, sizeof header);
+//   send_packet (client_sock, ls_output.c_str(), ls_output.size());
+//   log << "sent " << ls_output.size() << " bytes" << endl;
 }
 
 void run_server (accepted_socket& client_sock) {

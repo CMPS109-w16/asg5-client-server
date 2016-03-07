@@ -82,12 +82,24 @@ void cix_get (client_socket& server, string filename) {
    }
 }
 
-void cix_put (client_socket& server, string filename) {
-   cout << "Put File" << endl;
+void cix_put(client_socket& server, string filename) {
+
 }
 
 void cix_rm (client_socket& server, string filename) {
-   cout << "Remove File" << endl;
+   cix_header header;
+   header.command = CIX_RM;
+   strcpy(header.filename, filename.c_str());
+   log << "sending header " << header << endl;
+   send_packet (server, &header, sizeof header);
+   recv_packet (server, &header, sizeof header);
+   log << "received header " << header << endl;
+   if (header.command != CIX_RM) {
+      log << "sent CIX_LS, server did not return CIX_LSOUT" << endl;
+      log << "server returned " << header << endl;
+   }else {
+
+   }
 }
 
 
