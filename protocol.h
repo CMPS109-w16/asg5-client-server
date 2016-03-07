@@ -1,5 +1,6 @@
 // $Id: protocol.h,v 1.2 2015-05-12 18:59:40-07 - - $
-
+// Partner: Darius Sakhapour(dsakhapo@ucsc.edu)
+// Partner: Ryan Wong (rystwong@ucsc.edu)
 #ifndef __PROTOCOL__H__
 #define __PROTOCOL__H__
 

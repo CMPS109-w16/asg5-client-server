@@ -1,4 +1,6 @@
 // $Id: cix.cpp,v 1.2 2015-05-12 18:59:40-07 - - $
+// Partner: Darius Sakhapour(dsakhapo@ucsc.edu)
+// Partner: Ryan Wong (rystwong@ucsc.edu)
 
 #include <iostream>
 #include <string>

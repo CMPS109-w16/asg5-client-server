@@ -1,5 +1,6 @@
 // $Id: sockets.h,v 1.1 2015-05-12 18:48:40-07 - - $
-
+// Partner: Darius Sakhapour(dsakhapo@ucsc.edu)
+// Partner: Ryan Wong (rystwong@ucsc.edu)
 #ifndef __SOCKET_H__
 #define __SOCKET_H__
 

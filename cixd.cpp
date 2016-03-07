@@ -1,5 +1,6 @@
 // $Id: cixd.cpp,v 1.5 2016-02-11 14:20:37-08 - - $
-
+// Partner: Darius Sakhapour(dsakhapo@ucsc.edu)
+// Partner: Ryan Wong (rystwong@ucsc.edu)
 #include <iostream>
 #include <string>
 #include <vector>
