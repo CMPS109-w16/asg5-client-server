@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 using namespace std;
 
 #include <libgen.h>
@@ -47,38 +48,37 @@ void reply_ls (accepted_socket& client_sock, cix_header& header) {
 }
 
 void reply_get(accepted_socket& client_sock, cix_header& header) {
-   FILE* get_pipe = fopen(header.filename, "r");   // Opens the file.
-   char buffer[0x1000];
-   string get_output { };
-
-   if (get_pipe == NULL) {    // If file can't open/doesn't exist...
+   std::ifstream fopen (header.filename, std::ifstream::binary);
+   if (!fopen){   // If the file can't open, show error and skip.
       log << "get" << header.filename << " failed: " << strerror(errno)
                << endl;
       header.command = CIX_NAK;
       header.nbytes = errno;
       send_packet(client_sock, &header, sizeof header);
    } else {
-      // While it isn't EOF, read from the get_pipe file.
-      while (!feof(get_pipe)) {
-         char* rc = fgets(buffer, sizeof buffer, get_pipe);
-         if (rc == nullptr) break;
-         get_output.append(buffer); // Attach each read line to buffer.
-      }
-      int status = pclose(get_pipe);   // Closes pipe.
-      if (status < 0)   // If the pipe closed with an error...
+      // Get length of file.
+      fopen.seekg (0, fopen.end);
+      int file_length = fopen.tellg();
+      fopen.seekg (0, fopen.beg);
+      // Create buffer. +1 to length is for null character.
+      char * buffer = new char [file_length + 1];
+      buffer[file_length] = '\0';
+      // Read the file in its entirety.
+      fopen.read (buffer,file_length);
+
+      if (!fopen)   // If the pipe closed with an error...
          log << header.filename << ": " << strerror(errno) << endl;
-      else
-         log << header.filename << ": exit " << (status >> 8)
-                  << " signal " << (status & 0x7F) << " core "
-                  << (status >> 7 & 1) << endl;
-      // Send the successful packet files.
+      else     // Send success message.
+         log << header.filename << " was sent successfully." << endl;
+
+      // Send successful packets.
       header.command = CIX_FILE;
-      header.nbytes = get_output.size();
+      header.nbytes = file_length + 1;
       memset(header.filename, 0, FILENAME_SIZE);
       log << "sending header " << header << endl;
       send_packet(client_sock, &header, sizeof header);
-      send_packet(client_sock, get_output.c_str(), get_output.size());
-      log << "sent " << get_output.size() << " bytes" << endl;
+      send_packet(client_sock, buffer, header.nbytes);
+      log << "sent " << header.nbytes << " bytes" << endl;
    }
 }
 

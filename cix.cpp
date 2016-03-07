@@ -67,7 +67,7 @@ void cix_get (client_socket& server, string filename) {
    recv_packet (server, &header, sizeof header);
    log << "received header " << header << endl;
    if (header.command != CIX_FILE) {
-      log << "sent CIX_GET, server did not return CIX_GET" << endl;
+      log << "sent CIX_GET, server did not return CIX_FILE" << endl;
       log << "server returned " << header << endl;
    }else {
       char buffer[header.nbytes + 1];
