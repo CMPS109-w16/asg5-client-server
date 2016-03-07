@@ -49,28 +49,37 @@ void reply_ls (accepted_socket& client_sock, cix_header& header) {
 void reply_get(accepted_socket& client_sock, cix_header& header) {
    FILE* get_pipe = fopen(header.filename, "r");   // Opens the file.
    char buffer[0x1000];
-   string get_output {};
+   string get_output { };
 
-   // While it isn't EOF, read from the get_pipe file.
-   while (!feof(get_pipe)) {
-      char* rc = fgets(buffer, sizeof buffer, get_pipe);
-      if (rc == nullptr) break;
-      get_output.append(buffer);    // Attach each read line to buffer.
+   if (get_pipe == NULL) {    // If file can't open/doesn't exist...
+      log << "get" << header.filename << " failed: " << strerror(errno)
+               << endl;
+      header.command = CIX_NAK;
+      header.nbytes = errno;
+      send_packet(client_sock, &header, sizeof header);
+   } else {
+      // While it isn't EOF, read from the get_pipe file.
+      while (!feof(get_pipe)) {
+         char* rc = fgets(buffer, sizeof buffer, get_pipe);
+         if (rc == nullptr) break;
+         get_output.append(buffer); // Attach each read line to buffer.
+      }
+      int status = pclose(get_pipe);   // Closes pipe.
+      if (status < 0)   // If the pipe closed with an error...
+         log << header.filename << ": " << strerror(errno) << endl;
+      else
+         log << header.filename << ": exit " << (status >> 8)
+                  << " signal " << (status & 0x7F) << " core "
+                  << (status >> 7 & 1) << endl;
+      // Send the successful packet files.
+      header.command = CIX_FILE;
+      header.nbytes = get_output.size();
+      memset(header.filename, 0, FILENAME_SIZE);
+      log << "sending header " << header << endl;
+      send_packet(client_sock, &header, sizeof header);
+      send_packet(client_sock, get_output.c_str(), get_output.size());
+      log << "sent " << get_output.size() << " bytes" << endl;
    }
-
-   int status = pclose(get_pipe);
-   if (status < 0) log << header.filename << ": " << strerror (errno) << endl;
-              else log << header.filename << ": exit " << (status >> 8)
-                       << " signal " << (status & 0x7F)
-                       << " core " << (status >> 7 & 1) << endl;
-   // Resend the packet files.
-   header.command = CIX_GET;
-   header.nbytes = get_output.size();
-   memset (header.filename, 0, FILENAME_SIZE);
-   log << "sending header " << header << endl;
-   send_packet (client_sock, &header, sizeof header);
-   send_packet (client_sock, get_output.c_str(), get_output.size());
-   log << "sent " << get_output.size() << " bytes" << endl;
 }
 
 void reply_put (accepted_socket& client_sock, cix_header& header) {
