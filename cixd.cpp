@@ -79,17 +79,23 @@ void reply_put (accepted_socket& client_sock, cix_header& header) {
 
 void reply_rm(accepted_socket& client_sock, cix_header& header) {
    int status = unlink(header.filename);
-   if (status < 0) log << "rm " << header.filename << ": " << strerror (errno) << endl;
-              else log << "rm " << header.filename << ": exit " << (status >> 8)
-                       << " signal " << (status & 0x7F)
-                       << " core " << (status >> 7 & 1) << endl;
-   header.command = CIX_LSOUT;
-   header.nbytes = ls_output.size();
-//   memset (header.filename, 0, FILENAME_SIZE);
-//   log << "sending header " << header << endl;
-//   send_packet (client_sock, &header, sizeof header);
-//   send_packet (client_sock, ls_output.c_str(), ls_output.size());
-//   log << "sent " << ls_output.size() << " bytes" << endl;
+   if (status < 0) {
+      log << "rm " << header.filename << ": " << strerror(errno)
+               << endl;
+      header.command = CIX_NAK;
+      header.nbytes = errno;
+      memset (header.filename, 0, FILENAME_SIZE);
+      log << "sending header " << header << endl;
+      send_packet(client_sock, &header, sizeof header);
+   } else {
+      header.command = CIX_ACK;
+      memset (header.filename, 0, FILENAME_SIZE);
+      log << "sending header " << header << endl;
+      send_packet(client_sock, &header, sizeof header);
+      log << "rm " << header.filename << ": exit " << (status >> 8)
+               << " signal " << (status & 0x7F) << " core "
+               << (status >> 7 & 1) << endl;
+   }
 }
 
 void run_server (accepted_socket& client_sock) {

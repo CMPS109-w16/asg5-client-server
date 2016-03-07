@@ -94,11 +94,11 @@ void cix_rm (client_socket& server, string filename) {
    send_packet (server, &header, sizeof header);
    recv_packet (server, &header, sizeof header);
    log << "received header " << header << endl;
-   if (header.command != CIX_RM) {
-      log << "sent CIX_LS, server did not return CIX_LSOUT" << endl;
+   if (header.command != CIX_ACK) {
+      log << "sent CIX_RM, server did not return CIX_ACK" << endl;
       log << "server returned " << header << endl;
    }else {
-
+      log << filename << " removed successfully." << endl;
    }
 }
 
