@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 using namespace std;
 
 #include <libgen.h>
@@ -50,16 +51,15 @@ void reply_get(accepted_socket& client_sock, cix_header& header) {
    FILE* get_pipe = fopen(header.filename, "r");   // Opens the file.
    char buffer[0x1000];
    string get_output { };
-
    // While it isn't EOF, read from the get_pipe file.
    while (!feof(get_pipe)) {
       char* rc = fgets(buffer, sizeof buffer, get_pipe);
       if (rc == nullptr) break;
       get_output.append(buffer);    // Attach each read line to buffer.
    }
-
    int status = pclose(get_pipe);
-   if (status < 0) log << header.filename << ": " << strerror (errno) << endl;
+   if (status < 0) log << header.filename << ": "
+            << strerror (errno) << endl;
               else log << header.filename << ": exit " << (status >> 8)
                        << " signal " << (status & 0x7F)
                        << " core " << (status >> 7 & 1) << endl;
@@ -74,7 +74,18 @@ void reply_get(accepted_socket& client_sock, cix_header& header) {
 }
 
 void reply_put (accepted_socket& client_sock, cix_header& header) {
-
+   char buffer[header.nbytes + 1];
+   buffer[header.nbytes] = '\0';
+   recv_packet(client_sock, buffer, header.nbytes);
+   log << "received " << header.nbytes << " bytes" << endl;
+   ofstream new_file(string(header.filename));
+   new_file << buffer << endl;
+   new_file.close();
+   header.command = CIX_ACK;
+   header.nbytes = 0;
+   memset (header.filename, 0, FILENAME_SIZE);
+   log << "sending header" << header << endl;
+   send_packet(client_sock, &header, sizeof header);
 }
 
 void reply_rm (accepted_socket& client_sock, cix_header& header) {
@@ -135,7 +146,6 @@ void fork_cixserver (server_socket& server, accepted_socket& accept) {
    }
 }
 
-
 void reap_zombies() {
    for (;;) {
       int status;
@@ -163,7 +173,6 @@ void signal_action (int signal, void (*handler) (int)) {
                    << strerror (errno) << endl;
 }
 
-
 int main (int argc, char** argv) {
    log.execname (basename (argv[0]));
    log << "starting" << endl;
