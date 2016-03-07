@@ -95,13 +95,20 @@ void cix_get(client_socket& server, string filename) {
    }
 }
 
-<<<<<<< HEAD
 void cix_put (client_socket& server, string filename) {
+   if (filename.length() >= FILENAME_SIZE) {
+      log << filename << ": that filename is too long." << endl;
+      return;
+   } else if (filename.find('/') != string::npos) {
+      log << filename << ": filenames cannot have the / character."
+               << endl;
+      return;
+   }
    cix_header header;
    strcpy(header.filename, filename.c_str());
    FILE* put_pipe = fopen(header.filename, "r");
    char buffer[0x1000];
-   if (put_pipe == NULL) {
+   if (!feof(put_pipe)) {
          log << "put: fopen failed: " << strerror (errno) << endl;
       }
    else{
@@ -129,10 +136,6 @@ void cix_put (client_socket& server, string filename) {
          log << "Error, sent CIX_PUT and received: " << header << endl;
       }
    }
-=======
-void cix_put(client_socket& server, string filename) {
-
->>>>>>> 56b57a1b9bbc9f1ab40f8593a23e27bc57cbb6b9
 }
 
 void cix_rm (client_socket& server, string filename) {
