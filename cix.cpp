@@ -58,7 +58,16 @@ void cix_ls (client_socket& server) {
    }
 }
 
-void cix_get (client_socket& server, string filename) {
+void cix_get(client_socket& server, string filename) {
+   // Filename format checking.
+   if (filename.length() >= FILENAME_SIZE) {
+      log << filename << ": that filename is too long." << endl;
+      return;
+   } else if (filename.find('/') != string::npos) {
+      log << filename << ": filenames cannot have the / character."
+               << endl;
+      return;
+   }
    cix_header header;
    header.command = CIX_GET;
    strcpy(header.filename, filename.c_str());
@@ -69,6 +78,7 @@ void cix_get (client_socket& server, string filename) {
    if (header.command != CIX_FILE) {
       log << "sent CIX_GET, server did not return CIX_FILE" << endl;
       log << "server returned " << header << endl;
+      log << filename << " was not saved." << endl;
    }else {
       char buffer[header.nbytes + 1];
       recv_packet (server, buffer, header.nbytes);
@@ -79,6 +89,7 @@ void cix_get (client_socket& server, string filename) {
       // The server file's contents are copied into the new file.
       outfile << buffer << endl;
       outfile.close();
+      log << filename << " saved successfully." << endl;
    }
 }
 
@@ -87,6 +98,15 @@ void cix_put(client_socket& server, string filename) {
 }
 
 void cix_rm (client_socket& server, string filename) {
+   // Filename format checking.
+   if (filename.length() >= FILENAME_SIZE) {
+      log << filename << ": that filename is too long." << endl;
+      return;
+   } else if (filename.find('/') != string::npos) {
+      log << filename << ": filenames cannot have the / character."
+               << endl;
+      return;
+   }
    cix_header header;
    header.command = CIX_RM;
    strcpy(header.filename, filename.c_str());
@@ -97,6 +117,7 @@ void cix_rm (client_socket& server, string filename) {
    if (header.command != CIX_ACK) {
       log << "sent CIX_RM, server did not return CIX_ACK" << endl;
       log << "server returned " << header << endl;
+      log << filename << " cannot be removed." << endl;
    }else {
       log << filename << " removed successfully." << endl;
    }
