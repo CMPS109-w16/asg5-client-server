@@ -108,7 +108,7 @@ void cix_put (client_socket& server, string filename) {
    strcpy(header.filename, filename.c_str());
    FILE* put_pipe = fopen(header.filename, "r");
    char buffer[0x1000];
-   if (!feof(put_pipe)) {
+   if (put_pipe == NULL) {
          log << "put: fopen failed: " << strerror (errno) << endl;
       }
    else{
