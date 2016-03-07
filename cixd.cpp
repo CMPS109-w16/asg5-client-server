@@ -87,8 +87,9 @@ void reply_put (accepted_socket& client_sock, cix_header& header) {
 }
 
 void reply_rm(accepted_socket& client_sock, cix_header& header) {
+   // The unlink function will delete files, but not directories.
    int status = unlink(header.filename);
-   if (status < 0) {
+   if (status < 0) {    // If there was an error during unlink...
       log << "rm " << header.filename << ": " << strerror(errno)
                << endl;
       header.command = CIX_NAK;
