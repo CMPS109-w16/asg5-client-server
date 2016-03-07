@@ -1,5 +1,6 @@
 // $Id: logstream.h,v 1.1 2015-05-12 18:48:40-07 - - $
-
+// Partner: Darius Sakhapour(dsakhapo@ucsc.edu)
+// Partner: Ryan Wong (rystwong@ucsc.edu)
 //
 // class logstream
 // replacement for initial cout so that each call to a logstream

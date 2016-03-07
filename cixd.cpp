@@ -1,5 +1,6 @@
 // $Id: cixd.cpp,v 1.5 2016-02-11 14:20:37-08 - - $
-
+// Partner: Darius Sakhapour(dsakhapo@ucsc.edu)
+// Partner: Ryan Wong (rystwong@ucsc.edu)
 #include <iostream>
 #include <string>
 #include <vector>
@@ -48,6 +49,7 @@ void reply_ls (accepted_socket& client_sock, cix_header& header) {
 }
 
 void reply_get(accepted_socket& client_sock, cix_header& header) {
+<<<<<<< HEAD
    FILE* get_pipe = fopen(header.filename, "r");   // Opens the file.
    char buffer[0x1000];
    string get_output { };
@@ -71,6 +73,40 @@ void reply_get(accepted_socket& client_sock, cix_header& header) {
    send_packet (client_sock, &header, sizeof header);
    send_packet (client_sock, get_output.c_str(), get_output.size());
    log << "sent " << get_output.size() << " bytes" << endl;
+=======
+   std::ifstream fopen (header.filename, std::ifstream::binary);
+   if (!fopen){   // If the file can't open, show error and skip.
+      log << "get" << header.filename << " failed: " << strerror(errno)
+               << endl;
+      header.command = CIX_NAK;
+      header.nbytes = errno;
+      send_packet(client_sock, &header, sizeof header);
+   } else {
+      // Get length of file.
+      fopen.seekg (0, fopen.end);
+      int file_length = fopen.tellg();
+      fopen.seekg (0, fopen.beg);
+      // Create buffer. +1 to length is for null character.
+      char * buffer = new char [file_length + 1];
+      buffer[file_length] = '\0';
+      // Read the file in its entirety.
+      fopen.read (buffer,file_length);
+
+      if (!fopen)   // If the pipe closed with an error...
+         log << header.filename << ": " << strerror(errno) << endl;
+      else     // Send success message.
+         log << header.filename << " was sent successfully." << endl;
+
+      // Send successful packets.
+      header.command = CIX_FILE;
+      header.nbytes = file_length + 1;
+      memset(header.filename, 0, FILENAME_SIZE);
+      log << "sending header " << header << endl;
+      send_packet(client_sock, &header, sizeof header);
+      send_packet(client_sock, buffer, header.nbytes);
+      log << "sent " << header.nbytes << " bytes" << endl;
+   }
+>>>>>>> 56b57a1b9bbc9f1ab40f8593a23e27bc57cbb6b9
 }
 
 void reply_put (accepted_socket& client_sock, cix_header& header) {
@@ -88,8 +124,26 @@ void reply_put (accepted_socket& client_sock, cix_header& header) {
    send_packet(client_sock, &header, sizeof header);
 }
 
-void reply_rm (accepted_socket& client_sock, cix_header& header) {
-
+void reply_rm(accepted_socket& client_sock, cix_header& header) {
+   // The unlink function will delete files, but not directories.
+   int status = unlink(header.filename);
+   if (status < 0) {    // If there was an error during unlink...
+      log << "rm " << header.filename << ": " << strerror(errno)
+               << endl;
+      header.command = CIX_NAK;
+      header.nbytes = errno;
+      memset (header.filename, 0, FILENAME_SIZE);
+      log << "sending header " << header << endl;
+      send_packet(client_sock, &header, sizeof header);
+   } else {
+      header.command = CIX_ACK;
+      memset (header.filename, 0, FILENAME_SIZE);
+      log << "sending header " << header << endl;
+      send_packet(client_sock, &header, sizeof header);
+      log << "rm " << header.filename << ": exit " << (status >> 8)
+               << " signal " << (status & 0x7F) << " core "
+               << (status >> 7 & 1) << endl;
+   }
 }
 
 void run_server (accepted_socket& client_sock) {

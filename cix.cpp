@@ -1,4 +1,6 @@
 // $Id: cix.cpp,v 1.2 2015-05-12 18:59:40-07 - - $
+// Partner: Darius Sakhapour(dsakhapo@ucsc.edu)
+// Partner: Ryan Wong (rystwong@ucsc.edu)
 
 #include <iostream>
 #include <string>
@@ -58,7 +60,16 @@ void cix_ls (client_socket& server) {
    }
 }
 
-void cix_get (client_socket& server, string filename) {
+void cix_get(client_socket& server, string filename) {
+   // Filename format checking.
+   if (filename.length() >= FILENAME_SIZE) {
+      log << filename << ": that filename is too long." << endl;
+      return;
+   } else if (filename.find('/') != string::npos) {
+      log << filename << ": filenames cannot have the / character."
+               << endl;
+      return;
+   }
    cix_header header;
    header.command = CIX_GET;
    strcpy(header.filename, filename.c_str());
@@ -66,9 +77,10 @@ void cix_get (client_socket& server, string filename) {
    send_packet (server, &header, sizeof header);
    recv_packet (server, &header, sizeof header);
    log << "received header " << header << endl;
-   if (header.command != CIX_GET) {
-      log << "sent CIX_GET, server did not return CIX_GET" << endl;
+   if (header.command != CIX_FILE) {
+      log << "sent CIX_GET, server did not return CIX_FILE" << endl;
       log << "server returned " << header << endl;
+      log << filename << " was not saved." << endl;
    }else {
       char buffer[header.nbytes + 1];
       recv_packet (server, buffer, header.nbytes);
@@ -79,9 +91,11 @@ void cix_get (client_socket& server, string filename) {
       // The server file's contents are copied into the new file.
       outfile << buffer << endl;
       outfile.close();
+      log << filename << " saved successfully." << endl;
    }
 }
 
+<<<<<<< HEAD
 void cix_put (client_socket& server, string filename) {
    cix_header header;
    strcpy(header.filename, filename.c_str());
@@ -115,10 +129,36 @@ void cix_put (client_socket& server, string filename) {
          log << "Error, sent CIX_PUT and received: " << header << endl;
       }
    }
+=======
+void cix_put(client_socket& server, string filename) {
+
+>>>>>>> 56b57a1b9bbc9f1ab40f8593a23e27bc57cbb6b9
 }
 
 void cix_rm (client_socket& server, string filename) {
-   cout << "Remove File" << endl;
+   // Filename format checking.
+   if (filename.length() >= FILENAME_SIZE) {
+      log << filename << ": that filename is too long." << endl;
+      return;
+   } else if (filename.find('/') != string::npos) {
+      log << filename << ": filenames cannot have the / character."
+               << endl;
+      return;
+   }
+   cix_header header;
+   header.command = CIX_RM;
+   strcpy(header.filename, filename.c_str());
+   log << "sending header " << header << endl;
+   send_packet (server, &header, sizeof header);
+   recv_packet (server, &header, sizeof header);
+   log << "received header " << header << endl;
+   if (header.command != CIX_ACK) {
+      log << "sent CIX_RM, server did not return CIX_ACK" << endl;
+      log << "server returned " << header << endl;
+      log << filename << " cannot be removed." << endl;
+   }else {
+      log << filename << " removed successfully." << endl;
+   }
 }
 
 void usage() {
