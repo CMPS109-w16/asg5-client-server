@@ -58,9 +58,10 @@ void cix_ls (client_socket& server) {
    }
 }
 
-void cix_get (client_socket& server) {
+void cix_get (client_socket& server, string filename) {
    cix_header header;
    header.command = CIX_GET;
+   strcpy(header.filename, filename.c_str());
    log << "sending header " << header << endl;
    send_packet (server, &header, sizeof header);
    recv_packet (server, &header, sizeof header);
@@ -74,18 +75,18 @@ void cix_get (client_socket& server) {
       log << "received " << header.nbytes << " bytes" << endl;
       buffer[header.nbytes] = '\0';
       // Creates a new file to match the server one.
-      ofstream outfile ("test.txt");   // Rename to file name soon.
+      ofstream outfile (filename);   // Rename to file name soon.
       // The server file's contents are copied into the new file.
       outfile << buffer << endl;
       outfile.close();
    }
 }
 
-void cix_put (client_socket& server) {
+void cix_put (client_socket& server, string filename) {
    cout << "Put File" << endl;
 }
 
-void cix_rm (client_socket& server) {
+void cix_rm (client_socket& server, string filename) {
    cout << "Remove File" << endl;
 }
 
@@ -110,9 +111,20 @@ int main (int argc, char** argv) {
       for (;;) {
          string line;
          getline (cin, line);
+         // Splits the argument line
+         string command_name{}, file_name{};
+         size_t split_pos = line.find(" ");
+         if (split_pos == string::npos) {
+            command_name = line;
+         } else {
+            command_name = line.substr(0, split_pos);
+            file_name = line.substr(split_pos + 1);
+//            cout << command_name << endl << file_name << endl;
+         }
+
          if (cin.eof()) throw cix_exit();
          log << "command " << line << endl;
-         const auto& itor = command_map.find (line);
+         const auto& itor = command_map.find (command_name);
          cix_command cmd = itor == command_map.end()
                          ? CIX_ERROR : itor->second;
          switch (cmd) {
@@ -126,13 +138,13 @@ int main (int argc, char** argv) {
                cix_ls (server);
                break;
             case CIX_GET:
-               cix_get (server);
+               cix_get (server, file_name);
                break;
             case CIX_PUT:
-               cix_put (server);
+               cix_put (server, file_name);
                break;
             case CIX_RM:
-               cix_rm (server);
+               cix_rm (server, file_name);
                break;
             default:
                log << line << ": invalid command" << endl;
