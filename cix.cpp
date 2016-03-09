@@ -95,8 +95,47 @@ void cix_get(client_socket& server, string filename) {
    }
 }
 
-void cix_put(client_socket& server, string filename) {
-
+void cix_put (client_socket& server, string filename) {
+   if (filename.length() >= FILENAME_SIZE) {
+      log << filename << ": that filename is too long." << endl;
+      return;
+   } else if (filename.find('/') != string::npos) {
+      log << filename << ": filenames cannot have the / character."
+               << endl;
+      return;
+   }
+   cix_header header;
+   strcpy(header.filename, filename.c_str());
+   FILE* put_pipe = fopen(header.filename, "r");
+   char buffer[0x1000];
+   if (put_pipe == NULL) {
+         log << "put: fopen failed: " << strerror (errno) << endl;
+      }
+   else{
+      string file_contents;
+      while (!feof(put_pipe)) {
+         char* rc = fgets(buffer, sizeof buffer, put_pipe);
+         if (rc == nullptr) break;
+         file_contents.append(buffer);
+      }
+      int status = pclose(put_pipe);
+      if (status < 0)
+         log << header.filename << ": " << strerror(errno) << endl;
+      else
+         log << header.filename << ": exit " << (status >> 8)
+                  << " signal " << (status & 0x7F) << " core "
+                  << (status >> 7 & 1) << endl;
+      header.command = CIX_PUT;
+      header.nbytes = file_contents.size();
+      log << "sending header " << header << endl;
+      send_packet(server, &header, sizeof header);
+      send_packet(server, file_contents.c_str(), file_contents.size());
+      recv_packet(server, &header, sizeof header);
+      log << "sent " << file_contents.size() << " bytes" << endl;
+      if (header.command != CIX_ACK) {
+         log << "Error, sent CIX_PUT and received: " << header << endl;
+      }
+   }
 }
 
 void cix_rm (client_socket& server, string filename) {
@@ -125,7 +164,6 @@ void cix_rm (client_socket& server, string filename) {
    }
 }
 
-
 void usage() {
    cerr << "Usage: " << log.execname() << " [host] [port]" << endl;
    throw cix_exit();
@@ -138,6 +176,21 @@ int main (int argc, char** argv) {
    if (args.size() > 2) usage();
    string host = get_cix_server_host (args, 0);
    in_port_t port = get_cix_server_port (args, 1);
+
+   // Fix for when there is only one argument.
+   if(args.size() == 1) {
+      size_t pos = args[0].find(".");
+      if(pos == string::npos){
+         // If no . in the arg, the arg must be a port number.
+         host = get_cix_server_host (args, 1);
+         port = get_cix_server_port (args, 0);
+      } else {
+         // If there is a ., the arg must be a host IP address.
+         host = get_cix_server_host (args, 0);
+         port = get_cix_server_port (args, 1);
+      }
+   }
+
    log << to_string (hostinfo()) << endl;
    try {
       log << "connecting to " << host << " port " << port << endl;
@@ -156,7 +209,6 @@ int main (int argc, char** argv) {
             file_name = line.substr(split_pos + 1);
 //            cout << command_name << endl << file_name << endl;
          }
-
          if (cin.eof()) throw cix_exit();
          log << "command " << line << endl;
          const auto& itor = command_map.find (command_name);
